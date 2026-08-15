@@ -1,0 +1,6 @@
+{
+  "name": "Hypertrophy & Bodybuilding Nutrition Calculator",
+  "description": "Evidence-based bodybuilding calculator for muscle growth velocity, ISSN performance nutrition, Casey Butt maximum muscular potential, personalized weekly workout plan generator, and progress tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
