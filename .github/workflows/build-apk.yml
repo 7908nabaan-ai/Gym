@@ -1,1 +1,122 @@
+name: Build APK with Cordova
 
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build React app
+        run: npm run build
+
+      - name: Install Cordova globally
+        run: npm install -g cordova
+
+      - name: Create Cordova project
+        run: cordova create android-build com.example.gym GymApp
+
+      - name: Add Android platform
+        run: |
+          cd android-build
+          cordova platform add android
+
+      - name: Configure Cordova
+        run: |
+          cat > android-build/config.xml << 'EOF'
+          <?xml version='1.0' encoding='utf-8'?>
+          <widget id="com.example.gym" version="1.0.0" xmlns="http://www.w3.org/ns/widgets">
+              <name>Gym App</name>
+              <description>Bodybuilding & Nutrition Analysis</description>
+              <author email="dev@example.com" href="https://example.com">Gym Developer</author>
+              <content src="index.html" />
+              
+              <!-- Permissions -->
+              <permission name="android.permission.INTERNET" />
+              <permission name="android.permission.ACCESS_NETWORK_STATE" />
+              
+              <!-- Preferences -->
+              <preference name="Orientation" value="portrait" />
+              <preference name="fullscreen" value="false" />
+              <preference name="webviewbounce" value="false" />
+              
+              <!-- Plugins -->
+              <plugin name="cordova-plugin-whitelist" spec="1" />
+              <plugin name="cordova-plugin-network-information" spec="^3.1.0" />
+              
+              <!-- Allow external URLs -->
+              <allow-intent href="http://*/*" />
+              <allow-intent href="https://*/*" />
+              <allow-intent href="tel:*" />
+              <allow-intent href="sms:*" />
+              <allow-intent href="mailto:*" />
+              <allow-intent href="geo:*" />
+              
+              <!-- Platform specific allow -->
+              <allow-navigation href="http://*/*" />
+              <allow-navigation href="https://*/*" />
+          </widget>
+          EOF
+
+      - name: Copy built files to Cordova www
+        run: cp -r dist/* android-build/www/
+
+      - name: Build APK (Debug)
+        run: |
+          cd android-build
+          cordova build android --debug
+
+      - name: Upload APK as artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gym-app-debug
+          path: android-build/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+
+      - name: Create Release
+        if: success() && startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: android-build/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build summary
+        if: success()
+        run: |
+          echo "✅ APK Build Successful!"
+          echo ""
+          echo "📱 APK Location:"
+          echo "   android-build/platforms/android/app/build/outputs/apk/debug/app-debug.apk"
+          echo ""
+          echo "📊 APK Size:"
+          ls -lh android-build/platforms/android/app/build/outputs/apk/debug/app-debug.apk | awk '{print "   " $5}'
