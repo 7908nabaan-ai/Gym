@@ -5,6 +5,9 @@ on:
     branches: [ main, master ] # Triggers build when you push code to these branches
   workflow_dispatch: # Allows you to trigger the build manually anytime
 
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION
+
 jobs:
   build:
     runs-on: ubuntu-latest
