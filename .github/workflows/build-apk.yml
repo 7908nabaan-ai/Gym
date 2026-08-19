@@ -29,8 +29,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      # UPGRADED: Changed from @v3 to @v4 to support newer Node environments
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - name: Install dependencies
         run: npm install
@@ -102,9 +103,10 @@ jobs:
           path: android-build/platforms/android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
 
+      # UPGRADED: Changed from @v1 to @v3 to native-compile onto compliant Node runtimes
       - name: Create Release
         if: success() && startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           files: android-build/platforms/android/app/build/outputs/apk/debug/app-debug.apk
         env:
